@@ -1,75 +1,166 @@
-# 白柠视觉辅助 1.2.0
+# 白柠视觉辅助
 
-Android 9.0+ 原生横屏相机工具，本地运行人物/车辆检测。包名保持 com.visionoverlay.app，保留 telegram@BNSTR 水印。
+一款面向 Android 的离线实时视觉检测工具。它使用手机摄像头采集画面，在本地通过 ncnn + YOLOv8 完成人物、车辆检测，并将结果叠加到横屏取景画面上。
 
-## 1.2.0 界面与横屏动画
+项目名称：**白柠视觉辅助**  
+英文标识：`VisionOverlay`  
+当前版本：`1.2.0`  
+最低版本：Android 9.0（API 28）  
+运行方式：完全离线，无广告、无埋点、无相机画面上传
 
-- 启动动画逆时针旋转 90°，编码为 1280×720、16:9、H.264；保留全部画面，上下各 40px 黑边。
-- WideVideoFrame 按 16:9 适配窗口，新增横屏首帧占位图，避免视频准备间隙出现空白。
-- 设置采用 Apple 风格浅色分组列表、蓝色选中状态和清晰字重；相机控制集中到底部半透明操作栏。
-- 卡密弹窗改为浅色圆角布局，仍使用 jujuenb；音量键、悬浮入口和频道链接保留。
-- 面板显隐使用 180ms 淡入淡出，分类切换使用 160ms 淡入，尊重系统关闭动画设置。
-- 详见 UI_DESIGN.md，涵盖每页的布局、字号、交互与设计依据。
+> 这是一个个人二次开发项目，核心相机、推理和模型能力来自上游开源项目。本仓库重点提供 Android 应用层、绘制控制、启动流程和设置界面。
 
-## 现有功能
+## 功能概览
 
-- 使用用户提供的 JPG 生成五种密度的桌面图标，名称改为“白柠视觉辅助”。
-- 启动页播放用户提供的视频。视频已从 HEVC 转为 H.264，静音循环播放，可暂停；系统启动背景改为深色。
-- 模型在后台加载，视频与卡密弹窗无需等待模型加载。卡密为 jujuenb，弹窗直接提示；输入错误可重试。验证和模型加载均完成后才打开相机。
-- 卡密在本地比较，不联网验证；重新进入启动页需验证，Activity 重建保留本次验证状态。此机制不提供服务器授权、到期或吊销功能。
-- 主页按钮和缩放条可以收起。音量加显示、音量减隐藏，隐藏面板不暂停识别；可在设置中禁用音量键控制。
-- 默认提供可拖动的应用内“操作”悬浮按钮，普通用户可用，无需 Root 和系统悬浮窗权限。关闭音量键入口时保留触屏入口，避免无法再次展开。
-- 设置改为左侧分类、右侧内容：操作控制、识别性能、绘制显示、Root 增强、关于与链接；设置即时保存。
-- 启动页、卡密弹窗及设置提供官方频道入口；设置提供本项目与上游源码入口。
-- FPS 在原生帧回调内采样，由界面定时读取。Root 检测移到后台并限制等待时间。
+- 横屏相机预览，启动动画按 16:9 比例播放
+- 本地人物检测和 COCO 车辆类别检测
+- YOLOv8 Pose 人体骨骼绘制（当前模型为 COCO 17 点）
+- 人物框、车辆框、骨骼、手持标记、类别名称、置信度和 FPS 独立开关
+- Vulkan 优先、CPU 兜底的 ncnn 推理路径
+- 前后摄像头切换和镜头缩放
+- 可隐藏的主页控制栏
+- 音量加显示控制栏，音量减隐藏控制栏
+- 应用内可拖动操作按钮，无需 Root、无需系统悬浮窗权限
+- 启动页视频、离线卡密入口、官方频道和开源地址入口
+- 中文设置页，按操作控制、识别性能、绘制显示、Root 增强、关于与链接分类
+- 右下角作者标识：`telegram@BNSTR`
 
-官方频道：https://t.me/BNSTR
+## 截图与界面
 
-项目源码：https://github.com/fsq04116-oss/bn-android-vision-tracker
+应用采用横屏布局：取景画面作为主体，控制栏使用半透明深色材料；设置页采用浅色分组列表和侧栏导航。详细的界面结构、字号、交互和动效说明见 [UI_DESIGN.md](UI_DESIGN.md)。
 
-链接通过系统浏览器或 Telegram 打开。本应用无 INTERNET 权限，相机画面和卡密均不上传。
+启动页视频会在本地循环播放并静音。首次进入需要输入本地卡密：
 
-## 工程结构与复用关系
+```text
+jujuenb
+```
 
-- LaunchActivity.kt：新增视频加载页、卡密弹窗、频道入口。
-- AppRuntime.kt：新增后台模型准备、共享 JNI 实例与访问状态。
-- AppUi.kt：新增原生 View 主题、按钮、链接工具。
-- MainActivity.kt：改造收起面板、音量键、应用内悬浮按钮。
-- SettingsActivity.kt：改造分类设置与链接。
-- SettingsStore.kt / Models.kt：扩展操作偏好保存。
-- RootStatus.kt：改造后台检测、缓存与超时。
-- OverlayView.kt：沿用透明绘制层与作者水印。
-- java/com/tencent/yolov8ncnn/YOLOv8Ncnn.java：沿用 JNI 门面。
-- cpp/upstream：沿用上游 ncnn 推理、后处理、NDK 相机；yolov8ncnn.cpp 小幅修改 FPS 采样。
-- assets：沿用 yolov8n、yolov8n_pose 本地模型。
-- res/raw/launch_video.mp4：新增 H.264 启动视频。
-- res/mipmap-*/ic_launcher.png：新增附件图标。
-- res/values*/styles.xml：深色窗口与 Android 12+ 系统启动背景。
-- delivery：校验脚本、回滚数据与构建日志。
+卡密只在应用进程内比较，不连接服务器，也不提供服务器授权、到期或吊销能力。
 
-核心相机、ncnn/Vulkan、检测/骨骼后处理继续复用 nihui/ncnn-android-yolov8，没有重写推理底层。OpenCamera 仍为参考源，实际相机管线使用上游 NDK Camera。详见 UPSTREAM.md、SOURCE_ARCHIVES.md、docs/UPSTREAM_LICENSES.md。
+## 项目结构
 
-当前内置 YOLOv8n / YOLOv8n_pose，骨骼为 COCO 17 点；可用推理后端为 Vulkan 和 CPU。既有部分绘制样式参数仍属于旧 Overlay 配置，原生模型绘制尚未全部接入这些参数。本次重点为启动、品牌、设置组织与操作入口。
+```text
+app/src/main/
+├── java/com/visionoverlay/app/
+│   ├── LaunchActivity.kt       启动视频、卡密弹窗、模型加载
+│   ├── MainActivity.kt         横屏相机主页和操作栏
+│   ├── SettingsActivity.kt     分类设置页
+│   ├── OverlayView.kt          透明绘制层和水印
+│   ├── AppRuntime.kt           共享模型初始化
+│   ├── AppUi.kt                UI 样式和交互工具
+│   └── SettingsStore.kt        设置持久化
+├── java/com/tencent/yolov8ncnn/
+│   └── YOLOv8Ncnn.java         上游 JNI 门面
+├── cpp/upstream/               ncnn、YOLOv8、NDK Camera 代码
+├── assets/                     YOLOv8n 检测和 Pose 模型
+└── res/
+    ├── raw/launch_video.mp4    横屏启动动画
+    └── drawable-nodpi/         启动首帧占位图
+```
 
-## 编译与安装
+## 上游项目与复用范围
 
-在本目录运行 PowerShell：
+| 上游项目 | 复用内容 |
+| --- | --- |
+| [nihui/ncnn-android-yolov8](https://github.com/nihui/ncnn-android-yolov8) | ncnn 初始化、Vulkan 后端、YOLOv8 检测与 Pose 解码、NMS、COCO 标签、NDK Camera 和 JNI 调度结构 |
+| [OpenCamera](https://github.com/Almalence/OpenCamera) | 相机功能和控制器的参考实现；其应用内部依赖较多，当前版本没有直接复制整套 OpenCamera 应用 |
+
+本项目没有从零重写 ncnn、相机管线或 YOLOv8 后处理。新增代码主要位于 Kotlin 应用层和 UI 层。上游来源、文件映射和许可证说明见：
+
+- [UPSTREAM.md](UPSTREAM.md)
+- [SOURCE_ARCHIVES.md](SOURCE_ARCHIVES.md)
+- [docs/UPSTREAM_LICENSES.md](docs/UPSTREAM_LICENSES.md)
+
+## 编译运行
+
+### 环境要求
+
+- Android Studio 或 Gradle
+- Android SDK 35
+- Android NDK `29.0.14206865`
+- JDK 21
+
+### 命令行构建
+
+在项目根目录执行：
 
 ```powershell
 $env:JAVA_HOME='E:\114514\jdk21\jdk-21.0.12'
 $env:ANDROID_HOME='E:\114514\android-sdk'
 $env:ANDROID_SDK_ROOT='E:\114514\android-sdk'
 $env:GRADLE_USER_HOME='E:\114514\.gradle-kernelbn'
-.\gradlew.bat :app:assembleDebug :app:lintDebug --no-daemon --console=plain --offline
+
+.\gradlew.bat :app:assembleDebug :app:lintDebug --no-daemon --console=plain
+```
+
+生成文件：
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+安装到已连接设备：
+
+```powershell
 & "$env:ANDROID_HOME\platform-tools\adb.exe" install -r .\app\build\outputs\apk\debug\app-debug.apk
 ```
 
-SDK 35、Build Tools 36.0.0、NDK 29.0.14206865，支持 arm64-v8a、armeabi-v7a、x86、x86_64。Android Studio 打开本目录也可编译。首次在其他环境构建需下载对应 Gradle 依赖、SDK/NDK。
+应用只申请 `CAMERA` 权限，不申请 `INTERNET` 或 `SYSTEM_ALERT_WINDOW` 权限。首次运行需要用户授予相机权限。
 
-分发 APK 为上一级目录的 白柠视觉辅助-v1.2.0-debug.apk；旧文件名 VisionOverlay-debug.apk 也更新为相同内容。上一版 v1.1.0 APK 单独保留。保留调试签名，与本机上一版证书一致。
+## 性能与兼容性说明
 
-## 验证与回滚
+- 默认推理分辨率为 416，可在设置中选择 320、416 或 640。
+- Vulkan 是否可用取决于设备 GPU 和驱动；CPU 模式用于兼容性兜底。
+- 实际 FPS 会随设备、摄像头分辨率、模型模式和场景复杂度变化。
+- 当前 Pose 模型输出 COCO 17 点，不是 33 点全身骨骼。
+- 严重失焦、遮挡、极远距离和低光环境会降低检测稳定性。
+- Root 增强选项默认关闭，且不属于运行检测的必要条件。
 
-VERIFICATION.txt 记录真实构建、Lint、签名、包内容、视频解码与回滚结果。当前未连接实机，需安装后验证视频播放、卡密输入、音量键与拖动交互。
+## 隐私
 
-ROLLBACK.sh <目标工程副本> 使用 Python 3 恢复本次修改前的源文件，并移除本次新增的应用源文件/资源；先检查当前哈希，避免覆盖目标后续修改。Windows 用 Git Bash 执行，并设置 PYTHON 指向 Python 可执行文件。仅恢复源码，不自动安装 APK；已在独立副本上验证。更新前 APK 另存为上一级目录的 白柠视觉辅助-v1.1.0-debug.apk。
+- 推理在设备本地完成。
+- 相机帧不上传、不写入网络服务。
+- 项目没有广告和埋点。
+- 官方频道、GitHub 和上游链接只会在用户主动点击后交给系统浏览器或 Telegram 打开。
+
+## 发布 APK
+
+建议将 APK 作为 GitHub Release 附件发布，而不是提交到源码历史中。Release 文件名可以使用：
+
+```text
+白柠视觉辅助-v1.2.0-debug.apk
+```
+
+这是调试签名包，适合测试和内部发布。正式公开发布前，请替换为自己的 release signing key，并在 Release 页面说明签名和版本信息。
+
+## 上传到 GitHub
+
+在 GitHub 创建空仓库后，在项目根目录执行：
+
+```powershell
+git init
+git add .
+git commit -m "初始发布：白柠视觉辅助 1.2.0"
+git branch -M main
+git remote add origin https://github.com/<你的账号>/<你的仓库>.git
+git push -u origin main
+```
+
+建议把 APK 放到 GitHub Release 的附件中；源码仓库只提交工程、模型说明和许可证文件。发布前请检查 `docs/UPSTREAM_LICENSES.md`，并确认所有上游版权声明仍然保留。
+
+## 许可证与致谢
+
+本项目的上游代码、ncnn、OpenCV、模型和 OpenCamera 相关文件分别受其各自许可证约束。发布时请保留源文件中的版权声明，并阅读 [docs/UPSTREAM_LICENSES.md](docs/UPSTREAM_LICENSES.md)。
+
+感谢以下开源项目：
+
+- [nihui/ncnn-android-yolov8](https://github.com/nihui/ncnn-android-yolov8)
+- [OpenCamera](https://github.com/Almalence/OpenCamera)
+- [ncnn](https://github.com/Tencent/ncnn)
+- [OpenCV](https://opencv.org/)
+
+## 联系方式
+
+- 官方频道：<https://t.me/BNSTR>
+- 项目地址：<https://github.com/fsq04116-oss/bn-android-vision-tracker>
+- 作者：`telegram@BNSTR`
