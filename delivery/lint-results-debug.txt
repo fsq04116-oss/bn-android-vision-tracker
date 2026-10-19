@@ -1,0 +1,122 @@
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\java\com\visionoverlay\app\LaunchActivity.kt:19: Warning: The application should not provide its own launch screen [CustomSplashScreen]
+class LaunchActivity : ComponentActivity() {
+      ~~~~~~~~~~~~~~
+
+   Explanation for issues of type "CustomSplashScreen":
+   Starting in Android 12 (API 31+), the application's Launch Screen is
+   provided by the system and the application should not create its own,
+   otherwise the user will see two splashscreens. Please check the
+   SplashScreen class to check how the Splash Screen can be controlled and
+   customized.
+
+   https://developer.android.com/guide/topics/ui/splash-screen
+
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:16: Warning: A newer version of androidx.core:core-ktx than 1.13.1 is available: 1.19.1 [GradleDependency]
+    implementation("androidx.core:core-ktx:1.13.1")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:17: Warning: A newer version of androidx.appcompat:appcompat than 1.7.0 is available: 1.8.0 [GradleDependency]
+    implementation("androidx.appcompat:appcompat:1.7.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:18: Warning: A newer version of androidx.activity:activity-ktx than 1.9.2 is available: 1.13.0 [GradleDependency]
+    implementation("androidx.activity:activity-ktx:1.9.2")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:19: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.8.6 is available: 2.11.0 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:20: Warning: A newer version of androidx.camera:camera-camera2 than 1.4.0 is available: 1.6.2 [GradleDependency]
+    implementation("androidx.camera:camera-camera2:1.4.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:21: Warning: A newer version of androidx.camera:camera-lifecycle than 1.4.0 is available: 1.6.2 [GradleDependency]
+    implementation("androidx.camera:camera-lifecycle:1.4.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:22: Warning: A newer version of androidx.camera:camera-view than 1.4.0 is available: 1.6.2 [GradleDependency]
+    implementation("androidx.camera:camera-view:1.4.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\build.gradle.kts:23: Warning: A newer version of com.google.android.material:material than 1.12.0 is available: 1.14.0 [GradleDependency]
+    implementation("com.google.android.material:material:1.12.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "GradleDependency":
+   This detector looks for usages of libraries where the version you are using
+   is not the current stable release. Using older versions is fine, and there
+   are cases where you deliberately want to stick with an older version.
+   However, you may simply not be aware that a more recent version is
+   available, and that is what this lint check helps find.
+
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\AndroidManifest.xml:5: Warning: Should not restrict activity to fixed orientation. This may not be suitable for different form factors, causing the app to be letterboxed. [DiscouragedApi]
+        <activity android:name=".SettingsActivity" android:screenOrientation="landscape" />
+                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\AndroidManifest.xml:6: Warning: Should not restrict activity to fixed orientation. This may not be suitable for different form factors, causing the app to be letterboxed. [DiscouragedApi]
+        <activity android:name=".MainActivity" android:theme="@style/MediaTheme" android:screenOrientation="landscape" android:exported="false" />
+                                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\AndroidManifest.xml:7: Warning: Should not restrict activity to fixed orientation. This may not be suitable for different form factors, causing the app to be letterboxed. [DiscouragedApi]
+        <activity android:name=".LaunchActivity" android:theme="@style/MediaTheme" android:screenOrientation="landscape" android:windowSoftInputMode="adjustResize" android:exported="true">
+                                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "DiscouragedApi":
+   Discouraged APIs are allowed and are not deprecated, but they may be unfit
+   for common use (e.g. due to slow performance or subtle behavior).
+
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\AndroidManifest.xml:4: Warning: The attribute android:allowBackup is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher. [DataExtractionRules]
+    <application android:theme="@style/AppTheme" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:allowBackup="false" android:supportsRtl="true">
+                                                                                                                                                                                  ~~~~~
+
+   Explanation for issues of type "DataExtractionRules":
+   Before Android 12, the attributes android:allowBackup and
+   android:fullBackupContent were used to configure all forms of backup,
+   including cloud backups, device-to-device transfers and adb backup.
+
+   In Android 12 and higher, these attributes have been deprecated and will
+   only apply to cloud backups. You should instead use the attribute
+   android:dataExtractionRules, specifying an @xml resource that configures
+   which files to back up, for cloud backups and for device-to-device
+   transfers, separately. If your minSdkVersion supports older versions,
+   you'll still want to specify an android:fullBackupContent resource if the
+   default behavior is not right for your app.
+
+   https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   https://goo.gle/DataExtractionRules
+
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\res\mipmap-hdpi\ic_launcher.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\res\mipmap-mdpi\ic_launcher.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\res\mipmap-xhdpi\ic_launcher.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\res\mipmap-xxhdpi\ic_launcher.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\res\mipmap-xxxhdpi\ic_launcher.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+
+   Explanation for issues of type "IconLauncherShape":
+   According to the Android Design Guide
+   (https://d.android.com/r/studio-ui/designer/material/iconography) your
+   launcher icons should "use a distinct silhouette", a "three-dimensional,
+   front view, with a slight perspective as if viewed from above, so that
+   users perceive some depth."
+
+   The unique silhouette implies that your launcher icon should not be a
+   filled square.
+
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\java\com\visionoverlay\app\MainActivity.kt:59: Warning: Do not concatenate text displayed with setText. Use resource string with placeholders. [SetTextI18n]
+            statusView.text = "${"%.1f".format(fps)} FPS  ·  ${if (paused) "已暂停" else if (rootAvailable) "Root" else "本地识别"}"
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\java\com\visionoverlay\app\MainActivity.kt:59: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            statusView.text = "${"%.1f".format(fps)} FPS  ·  ${if (paused) "已暂停" else if (rootAvailable) "Root" else "本地识别"}"
+                                  ~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\java\com\visionoverlay\app\MainActivity.kt:59: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            statusView.text = "${"%.1f".format(fps)} FPS  ·  ${if (paused) "已暂停" else if (rootAvailable) "Root" else "本地识别"}"
+                                                    ~~~~~~~~~
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\app\src\main\java\com\visionoverlay\app\MainActivity.kt:108: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+                    zoomRatio = 1f + progress / 10f; zoomLabel.text = "%.1f×".format(zoomRatio)
+                                                                       ~~~~~
+
+   Explanation for issues of type "SetTextI18n":
+   When calling TextView#setText
+   * Never call Number#toString() to format numbers; it will not handle
+   fraction separators and locale-specific digits properly. Consider using
+   String#format with proper format specifications (%d or %f) instead.
+   * Do not pass a string literal (e.g. "Hello") to display text. Hardcoded
+   text can not be properly translated to other languages. Consider using
+   Android resource strings instead.
+   * Do not build messages by concatenating text chunks. Such messages can not
+   be properly translated.
+
+   https://developer.android.com/guide/topics/resources/localization.html
+
+0 errors, 22 warnings

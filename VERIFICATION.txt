@@ -1,0 +1,81 @@
+白柠视觉辅助 1.2.0 — 横屏动画与 UI 重构验证
+changed branch/field: video.rotation=-90° (counterclockwise); video=1280x720/SAR1:1/DAR16:9; ui=light grouped settings + translucent camera dock; versionCode=3/versionName=1.2.0
+工作目录: C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay
+没有 Git 仓库；当前工程已保留新版源码。原始附件和上一版 APK 未修改。
+
+四个产物:
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\MODIFIED_FILE.kt
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\DIFF_FILE.patch
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\VERIFICATION.txt
+C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\VisionOverlay\ROLLBACK.sh
+MODIFIED_FILE.kt 为当前 MainActivity.kt 副本；差异覆盖10个修改文件与3个新增文件。二进制资源差异记录前后哈希。
+
+交付 APK: C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\白柠视觉辅助-v1.2.0-debug.apk
+APK SHA256: 40C91EF70EBFA6F7E5FE4D53FB75F9EB9F43EE9570986DA9260A602C76A22EB4
+原版/更新前 APK: C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\白柠视觉辅助-v1.1.0-debug.apk
+原始 SHA256: B2A56E080997CB6D76131DC5A13B6C36089DE39D9D184373872C0F808391D815
+签名证书与上一版相同；包名 com.visionoverlay.app。
+源码备份: delivery/baseline-source.zip；46个原始文件与原始哈希在 delivery/changes.json。
+
+验证环境:
+JAVA_HOME=E:\114514\jdk21\jdk-21.0.12
+ANDROID_HOME=ANDROID_SDK_ROOT=E:\114514\android-sdk
+GRADLE_USER_HOME=E:\114514\.gradle-kernelbn
+python=C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe
+以下命令在工程目录运行；python 指向上述解释器。
+
+BASELINE
+command: python delivery/verify_delivery.py BASELINE
+input: C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\白柠视觉辅助-v1.1.0-debug.apk
+literal output: BASELINE PASS
+exit status: 0
+result: APK 原始哈希一致、签名有效、名称白柠视觉辅助、版本1.1.0、旧启动页配置、4种ABI与2组模型；仅CAMERA和AndroidX自有签名权限。
+
+MODIFIED
+command: python delivery/verify_delivery.py MODIFIED
+input: C:\Users\Administrator\Documents\Codex\2026-10-17\bang\outputs\白柠视觉辅助-v1.2.0-debug.apk
+literal output: MODIFIED PASS
+exit status: 0
+result: 签名及证书匹配、versionCode=3、versionName=1.2.0、LaunchActivity启动；打包视频及海报与源文件一致，5种图标与本地卡密及链接均存在；Lint无错误。
+Native lib/ 和模型 assets/ 与1.1.0逐字节一致，未修改底层相机或推理后处理。无INTERNET和SYSTEM_ALERT_WINDOW权限。
+
+ROLLBACK（独立工程副本）
+cwd: C:\Users\Administrator\Documents\Codex\2026-10-17\bang
+input: C:\Users\Administrator\Documents\Codex\2026-10-17\bang\work\apple-ui-update\rollback-copy
+command (PowerShell):
+$env:PYTHON='C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'
+& 'C:\Program Files\Git\bin\bash.exe' -c 'chmod +x outputs/VisionOverlay/ROLLBACK.sh && test -x outputs/VisionOverlay/ROLLBACK.sh && outputs/VisionOverlay/ROLLBACK.sh work/apple-ui-update/rollback-copy' 
+literal output: RESTORE PASS source=baseline added_resources=removed
+exit status: 0
+verify command (project cwd): python delivery/verify_delivery.py ROLLBACK ../../work/apple-ui-update/rollback-copy
+literal output: ROLLBACK PASS
+exit status: 0
+restored status: 副本46个原始文件逐字节匹配；新增 WideVideoFrame、海报、UI_DESIGN.md 移除；恢复1.1.0版本字段、深色UI和竖向视频资源。实际工作工程全部更改哈希仍匹配新版。仅验证源码/资源恢复，未在手机运行旧版。
+
+编译与 Lint
+command: .\gradlew.bat :app:assembleDebug :app:lintDebug --no-daemon --console=plain --offline
+input: 当前工程；literal result: BUILD SUCCESSFUL in 53s
+exit status: 0
+Lint literal result: 0 errors, 22 warnings
+
+视频全片与方向验证
+cwd: C:\Users\Administrator\Documents\Codex\2026-10-17\bang
+command: python outputs/VisionOverlay/delivery/verify_media.py work/brand-update/python/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe D:/wx/xwechat_files/wxid_6hrzc7u0jvxa22_e86e/msg/video/2026-10/401d663ef2a8cda44a8a48b46540935e.mp4
+input: 原附件和当前 res/raw/launch_video.mp4；literal output: MEDIA PASS codec=h264 size=1280x720 ratio=16:9 frames=699 rotation=counterclockwise90 poster=matched
+exit status: 0
+result: H.264 Main, 1280×720, SAR1:1, DAR16:9, 30fps, 23.30s, 699帧，全片解码无错误。
+抽取9秒帧与原附件逆时针90°旋转后逐像素下采样对照，平均误差阈值<8/255通过；2秒海报视觉检查完成。
+原附件旋转后1280×640，上下各40px补黑；保持画面完整，不进行变形拉伸。画布在更宽设备上按16:9居中适配。
+视频 SHA256: 5B31371A1EC059B3C430E0F20C5CD74EB2BA97F7671D12E04B9AFCD9A3D16B5E
+
+UI实现与使用
+按 apple-ui-designer 技能重构启动/验证、相机主页、设置页。具体意图、结构、字号、交互与原生设计理由见 UI_DESIGN.md。
+卡密仍为 jujuenb。音量加显示控制，音量减隐藏；悬浮按钮可拖动。频道与源码入口保留。
+浅色分组设置、系统字体与克制蓝色；相机底部半透明操作栏；180ms面板显隐/160ms分类淡入。系统关闭动画时直接切换。
+首帧占位覆盖视频准备间隙；媒体窗口使用黑色启动背景，设置页面使用浅色背景。
+
+实机验证状态
+command: E:\114514\android-sdk\platform-tools\adb.exe devices
+literal output: List of devices attached（无设备行）
+exit status: 0
+本次没有连接的安卓设备，新版实机渲染、视频播放、键盘避让、按钮拖动与音量键需安装后确认。

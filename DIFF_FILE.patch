@@ -1,0 +1,1016 @@
+# v1.2.0: 16:9 counterclockwise90 video; Apple-inspired native UI; versionCode=3
+--- a/README.md
++++ b/README.md
+@@ -1,66 +1,75 @@
+-# 白柠视觉辅助 1.1.0
+-
+-Android 9.0+ 原生横屏相机工具，本地运行人物/车辆检测。包名保持 com.visionoverlay.app，保留 telegram@BNSTR 水印。
+-
+-## 本次更新
+-
+-- 使用用户提供的 JPG 生成五种密度的桌面图标，名称改为“白柠视觉辅助”。
+-- 启动页播放用户提供的视频。视频已从 HEVC 转为 H.264，静音循环播放，可暂停；系统启动背景改为深色。
+-- 模型在后台加载，视频与卡密弹窗无需等待模型加载。卡密为 jujuenb，弹窗直接提示；输入错误可重试。验证和模型加载均完成后才打开相机。
+-- 卡密在本地比较，不联网验证；重新进入启动页需验证，Activity 重建保留本次验证状态。此机制不提供服务器授权、到期或吊销功能。
+-- 主页按钮和缩放条可以收起。音量加显示、音量减隐藏，隐藏面板不暂停识别；可在设置中禁用音量键控制。
+-- 默认提供可拖动的应用内“操作”悬浮按钮，普通用户可用，无需 Root 和系统悬浮窗权限。关闭音量键入口时保留触屏入口，避免无法再次展开。
+-- 设置改为左侧分类、右侧内容：操作控制、识别性能、绘制显示、Root 增强、关于与链接；设置即时保存。
+-- 启动页、卡密弹窗及设置提供官方频道入口；设置提供本项目与上游源码入口。
+-- FPS 在原生帧回调内采样，由界面定时读取。Root 检测移到后台并限制等待时间。
+-
+-官方频道：https://t.me/BNSTR
+-
+-项目源码：https://github.com/fsq04116-oss/bn-android-vision-tracker
+-
+-链接通过系统浏览器或 Telegram 打开。本应用无 INTERNET 权限，相机画面和卡密均不上传。
+-
+-## 工程结构与复用关系
+-
+-- LaunchActivity.kt：新增视频加载页、卡密弹窗、频道入口。
+-- AppRuntime.kt：新增后台模型准备、共享 JNI 实例与访问状态。
+-- AppUi.kt：新增原生 View 主题、按钮、链接工具。
+-- MainActivity.kt：改造收起面板、音量键、应用内悬浮按钮。
+-- SettingsActivity.kt：改造分类设置与链接。
+-- SettingsStore.kt / Models.kt：扩展操作偏好保存。
+-- RootStatus.kt：改造后台检测、缓存与超时。
+-- OverlayView.kt：沿用透明绘制层与作者水印。
+-- java/com/tencent/yolov8ncnn/YOLOv8Ncnn.java：沿用 JNI 门面。
+-- cpp/upstream：沿用上游 ncnn 推理、后处理、NDK 相机；yolov8ncnn.cpp 小幅修改 FPS 采样。
+-- assets：沿用 yolov8n、yolov8n_pose 本地模型。
+-- res/raw/launch_video.mp4：新增 H.264 启动视频。
+-- res/mipmap-*/ic_launcher.png：新增附件图标。
+-- res/values*/styles.xml：深色窗口与 Android 12+ 系统启动背景。
+-- delivery：校验脚本、回滚数据与构建日志。
+-
+-核心相机、ncnn/Vulkan、检测/骨骼后处理继续复用 nihui/ncnn-android-yolov8，没有重写推理底层。OpenCamera 仍为参考源，实际相机管线使用上游 NDK Camera。详见 UPSTREAM.md、SOURCE_ARCHIVES.md、docs/UPSTREAM_LICENSES.md。
+-
+-当前内置 YOLOv8n / YOLOv8n_pose，骨骼为 COCO 17 点；可用推理后端为 Vulkan 和 CPU。既有部分绘制样式参数仍属于旧 Overlay 配置，原生模型绘制尚未全部接入这些参数。本次重点为启动、品牌、设置组织与操作入口。
+-
+-## 编译与安装
+-
+-在本目录运行 PowerShell：
+-
+-```powershell
+-$env:JAVA_HOME='E:\114514\jdk21\jdk-21.0.12'
+-$env:ANDROID_HOME='E:\114514\android-sdk'
+-$env:ANDROID_SDK_ROOT='E:\114514\android-sdk'
+-$env:GRADLE_USER_HOME='E:\114514\.gradle-kernelbn'
+-.\gradlew.bat :app:assembleDebug :app:lintDebug --no-daemon --console=plain --offline
+-& "$env:ANDROID_HOME\platform-tools\adb.exe" install -r .\app\build\outputs\apk\debug\app-debug.apk
+-```
+-
+-SDK 35、Build Tools 36.0.0、NDK 29.0.14206865，支持 arm64-v8a、armeabi-v7a、x86、x86_64。Android Studio 打开本目录也可编译。首次在其他环境构建需下载对应 Gradle 依赖、SDK/NDK。
+-
+-分发 APK 为上一级目录的 白柠视觉辅助-v1.1.0-debug.apk；旧文件名 VisionOverlay-debug.apk 也更新为相同内容。保留调试签名，与本机上一版证书一致。
+-
+-## 验证与回滚
+-
+-VERIFICATION.txt 记录真实构建、Lint、签名、包内容、视频解码与回滚结果。当前未连接实机，需安装后验证视频播放、卡密输入、音量键与拖动交互。
+-
+-ROLLBACK.sh <目标工程副本> 使用 Python 3 恢复本次修改前的源文件，并移除本次新增的应用源文件/资源；先检查当前哈希，避免覆盖目标后续修改。Windows 用 Git Bash 执行，并设置 PYTHON 指向 Python 可执行文件。仅恢复源码，不自动安装 APK；已在独立副本上验证。更新前 APK 另存为上一级目录的 白柠视觉辅助-更新前备份.apk。
++# 白柠视觉辅助 1.2.0
++
++Android 9.0+ 原生横屏相机工具，本地运行人物/车辆检测。包名保持 com.visionoverlay.app，保留 telegram@BNSTR 水印。
++
++## 1.2.0 界面与横屏动画
++
++- 启动动画逆时针旋转 90°，编码为 1280×720、16:9、H.264；保留全部画面，上下各 40px 黑边。
++- WideVideoFrame 按 16:9 适配窗口，新增横屏首帧占位图，避免视频准备间隙出现空白。
++- 设置采用 Apple 风格浅色分组列表、蓝色选中状态和清晰字重；相机控制集中到底部半透明操作栏。
++- 卡密弹窗改为浅色圆角布局，仍使用 jujuenb；音量键、悬浮入口和频道链接保留。
++- 面板显隐使用 180ms 淡入淡出，分类切换使用 160ms 淡入，尊重系统关闭动画设置。
++- 详见 UI_DESIGN.md，涵盖每页的布局、字号、交互与设计依据。
++
++## 现有功能
++
++- 使用用户提供的 JPG 生成五种密度的桌面图标，名称改为“白柠视觉辅助”。
++- 启动页播放用户提供的视频。视频已从 HEVC 转为 H.264，静音循环播放，可暂停；系统启动背景改为深色。
++- 模型在后台加载，视频与卡密弹窗无需等待模型加载。卡密为 jujuenb，弹窗直接提示；输入错误可重试。验证和模型加载均完成后才打开相机。
++- 卡密在本地比较，不联网验证；重新进入启动页需验证，Activity 重建保留本次验证状态。此机制不提供服务器授权、到期或吊销功能。
++- 主页按钮和缩放条可以收起。音量加显示、音量减隐藏，隐藏面板不暂停识别；可在设置中禁用音量键控制。
++- 默认提供可拖动的应用内“操作”悬浮按钮，普通用户可用，无需 Root 和系统悬浮窗权限。关闭音量键入口时保留触屏入口，避免无法再次展开。
++- 设置改为左侧分类、右侧内容：操作控制、识别性能、绘制显示、Root 增强、关于与链接；设置即时保存。
++- 启动页、卡密弹窗及设置提供官方频道入口；设置提供本项目与上游源码入口。
++- FPS 在原生帧回调内采样，由界面定时读取。Root 检测移到后台并限制等待时间。
++
++官方频道：https://t.me/BNSTR
++
++项目源码：https://github.com/fsq04116-oss/bn-android-vision-tracker
++
++链接通过系统浏览器或 Telegram 打开。本应用无 INTERNET 权限，相机画面和卡密均不上传。
++
++## 工程结构与复用关系
++
++- LaunchActivity.kt：新增视频加载页、卡密弹窗、频道入口。
++- AppRuntime.kt：新增后台模型准备、共享 JNI 实例与访问状态。
++- AppUi.kt：新增原生 View 主题、按钮、链接工具。
++- MainActivity.kt：改造收起面板、音量键、应用内悬浮按钮。
++- SettingsActivity.kt：改造分类设置与链接。
++- SettingsStore.kt / Models.kt：扩展操作偏好保存。
++- RootStatus.kt：改造后台检测、缓存与超时。
++- OverlayView.kt：沿用透明绘制层与作者水印。
++- java/com/tencent/yolov8ncnn/YOLOv8Ncnn.java：沿用 JNI 门面。
++- cpp/upstream：沿用上游 ncnn 推理、后处理、NDK 相机；yolov8ncnn.cpp 小幅修改 FPS 采样。
++- assets：沿用 yolov8n、yolov8n_pose 本地模型。
++- res/raw/launch_video.mp4：新增 H.264 启动视频。
++- res/mipmap-*/ic_launcher.png：新增附件图标。
++- res/values*/styles.xml：深色窗口与 Android 12+ 系统启动背景。
++- delivery：校验脚本、回滚数据与构建日志。
++
++核心相机、ncnn/Vulkan、检测/骨骼后处理继续复用 nihui/ncnn-android-yolov8，没有重写推理底层。OpenCamera 仍为参考源，实际相机管线使用上游 NDK Camera。详见 UPSTREAM.md、SOURCE_ARCHIVES.md、docs/UPSTREAM_LICENSES.md。
++
++当前内置 YOLOv8n / YOLOv8n_pose，骨骼为 COCO 17 点；可用推理后端为 Vulkan 和 CPU。既有部分绘制样式参数仍属于旧 Overlay 配置，原生模型绘制尚未全部接入这些参数。本次重点为启动、品牌、设置组织与操作入口。
++
++## 编译与安装
++
++在本目录运行 PowerShell：
++
++```powershell
++$env:JAVA_HOME='E:\114514\jdk21\jdk-21.0.12'
++$env:ANDROID_HOME='E:\114514\android-sdk'
++$env:ANDROID_SDK_ROOT='E:\114514\android-sdk'
++$env:GRADLE_USER_HOME='E:\114514\.gradle-kernelbn'
++.\gradlew.bat :app:assembleDebug :app:lintDebug --no-daemon --console=plain --offline
++& "$env:ANDROID_HOME\platform-tools\adb.exe" install -r .\app\build\outputs\apk\debug\app-debug.apk
++```
++
++SDK 35、Build Tools 36.0.0、NDK 29.0.14206865，支持 arm64-v8a、armeabi-v7a、x86、x86_64。Android Studio 打开本目录也可编译。首次在其他环境构建需下载对应 Gradle 依赖、SDK/NDK。
++
++分发 APK 为上一级目录的 白柠视觉辅助-v1.2.0-debug.apk；旧文件名 VisionOverlay-debug.apk 也更新为相同内容。上一版 v1.1.0 APK 单独保留。保留调试签名，与本机上一版证书一致。
++
++## 验证与回滚
++
++VERIFICATION.txt 记录真实构建、Lint、签名、包内容、视频解码与回滚结果。当前未连接实机，需安装后验证视频播放、卡密输入、音量键与拖动交互。
++
++ROLLBACK.sh <目标工程副本> 使用 Python 3 恢复本次修改前的源文件，并移除本次新增的应用源文件/资源；先检查当前哈希，避免覆盖目标后续修改。Windows 用 Git Bash 执行，并设置 PYTHON 指向 Python 可执行文件。仅恢复源码，不自动安装 APK；已在独立副本上验证。更新前 APK 另存为上一级目录的 白柠视觉辅助-v1.1.0-debug.apk。
+--- /dev/null
++++ b/UI_DESIGN.md
+@@ -0,0 +1,34 @@
++# 白柠视觉辅助 · UI 设计说明（1.2.0）
++
++本次使用 apple-ui-designer 技能。项目继续使用 Android 原生 View 与现有推理/相机架构，通过分组、字体层级、留白和克制的动效表达 Apple 风格。采用系统 sans 字体，不打包 Apple 专有字体。界面保持中文、横屏。
++
++## 启动与卡密验证
++
++- 意图：让加载过程可见，动画方向正确，进入相机的路径清楚。
++- 布局：黑色媒体画布中央放置固定 16:9 视频；视频逆时针旋转 90°后输出为 1280×720。原画面旋转后为 1280×640，上下各补 40px 黑边，保留完整内容。宽屏手机按比例适配，额外空间留黑，不拉伸视频。顶部品牌与暂停按钮分列两侧，右下角用轻量浅色卡片显示进度和入口。
++- 字体：品牌 23sp 粗体，入口标题 20sp 粗体，状态 14sp，辅助说明 12–13sp；通过字重和字号建立层级。
++- 验证：沿用本地卡密 jujuenb，圆角浅色弹窗展示提示、输入框、主操作与频道。输入错误保留弹窗并标注错误；模型与验证均就绪后进入相机。
++- 交互与动效：本地视频循环静音播放，可以暂停；首帧占位图覆盖视频准备间隙，首帧真正呈现后移除。验证弹窗采用 Android 系统窗口行为，输入区支持滚动与键盘避让。
++- 原生设计依据：主操作使用蓝色，辅助操作弱化；媒体画布保持深色，信息卡使用浅色，减少视频上的重型面板。
++
++## 相机主页
++
++- 意图：让相机画面成为主体，操作只在需要时出现。
++- 布局：左上品牌，右上小型 FPS 状态；底部中央为半透明深色操作栏，缩放条独立位于其上方。可拖动悬浮按钮与音量键继续提供显隐入口。
++- 字体：品牌 20sp，FPS 13sp 中等字重，按钮 14sp，倍率 15sp；白字配深色材料，确保复杂背景下可读。
++- 交互与动效：音量加显示、音量减隐藏控制栏，不停止识别；暂停识别仍为独立按钮。面板以 180ms 减速淡入淡出，快速反向操作会取消旧动画。系统关闭动画时直接切换状态。
++- 原生设计依据：把高频操作集中在可触达区域，以半透明材质区分控制层与取景层。按钮触摸区域至少 48dp；系统安全区避开导航栏和开孔。半透明为真实 alpha 合成，不使用模糊截图。
++
++## 设置
++
++- 意图：减少密集开关堆积，让常用操作优先。
++- 布局：浅色侧栏提供五个分类，右侧内容纵向滚动。分类内使用白色分组列表和灰色辅助说明，蓝色选中背景标明当前位置。操作控制、识别性能、绘制显示、Root 增强、关于与链接顺序保留。
++- 字体：侧栏大标题 30sp，内容标题 28sp 粗体，设置行 16sp，分组与说明 13sp。
++- 交互与动效：原生 Spinner 选择参数，SwitchCompat 显示开关；点击即时保存。分类内容使用 160ms 淡入；系统关闭动画时直接呈现。Root 未获取时相关控件置灰，普通操作保持可用。
++- 原生设计依据：横屏采用熟悉的侧栏与详情分栏，组内使用行间节奏代替粗边框。颜色只承担选择、主操作和开关状态，不承载多余装饰。
++
++## 实现与验证边界
++
++主要文件为 AppUi.kt、WideVideoFrame.kt、LaunchActivity.kt、MainActivity.kt、SettingsActivity.kt 和 values*/styles.xml。媒体视频和海报位于 res/raw 与 res/drawable-nodpi。UI 与媒体改动未修改本轮 ncnn、相机管线或检测后处理。
++
++构建、Lint、签名、包资源和视频全片解码结果见 VERIFICATION.txt。本次无连接的 Android 设备，尚未获取新版实机截图；本文描述的是代码实现，不作为已完成实机视觉验证的证明。
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -4,7 +4,7 @@
+ }
+ 
+ android { namespace = "com.visionoverlay.app"; compileSdk = 35; buildToolsVersion = "36.0.0"; ndkVersion = "29.0.14206865"
+-    defaultConfig { applicationId = "com.visionoverlay.app"; minSdk = 28; targetSdk = 35; versionCode = 2; versionName = "1.1.0" }
++    defaultConfig { applicationId = "com.visionoverlay.app"; minSdk = 28; targetSdk = 35; versionCode = 3; versionName = "1.2.0" }
+     compileOptions { sourceCompatibility = JavaVersion.VERSION_1_8; targetCompatibility = JavaVersion.VERSION_1_8 }
+     kotlinOptions { jvmTarget = "1.8" }
+     buildFeatures { viewBinding = false; buildConfig = true }
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -3,8 +3,8 @@
+     <uses-feature android:name="android.hardware.camera" android:required="false" />
+     <application android:theme="@style/AppTheme" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:allowBackup="false" android:supportsRtl="true">
+         <activity android:name=".SettingsActivity" android:screenOrientation="landscape" />
+-        <activity android:name=".MainActivity" android:screenOrientation="landscape" android:exported="false" />
+-        <activity android:name=".LaunchActivity" android:screenOrientation="landscape" android:windowSoftInputMode="adjustResize" android:exported="true">
++        <activity android:name=".MainActivity" android:theme="@style/MediaTheme" android:screenOrientation="landscape" android:exported="false" />
++        <activity android:name=".LaunchActivity" android:theme="@style/MediaTheme" android:screenOrientation="landscape" android:windowSoftInputMode="adjustResize" android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+--- a/app/src/main/java/com/visionoverlay/app/AppUi.kt
++++ b/app/src/main/java/com/visionoverlay/app/AppUi.kt
+@@ -3,41 +3,83 @@
+ import android.content.Context
+ import android.content.Intent
+ import android.content.res.ColorStateList
++import android.animation.ValueAnimator
+ import android.graphics.Color
+ import android.graphics.Typeface
+ import android.graphics.drawable.GradientDrawable
+ import android.graphics.drawable.RippleDrawable
+ import android.net.Uri
++import android.view.View
++import android.view.animation.DecelerateInterpolator
+ import android.widget.Button
+ import android.widget.TextView
+ import android.widget.Toast
++import androidx.core.view.ViewCompat
++import androidx.core.view.WindowInsetsCompat
+ 
+ /** Shared visual tokens keep the loading, camera, and settings screens consistent. */
+ object AppUi {
+     const val CHANNEL = "https://t.me/BNSTR"
+     const val SOURCE = "https://github.com/fsq04116-oss/bn-android-vision-tracker"
+-    val background = Color.rgb(8, 15, 24)
+-    val surface = Color.rgb(19, 32, 47)
+-    val text = Color.rgb(235, 243, 252)
+-    val muted = Color.rgb(163, 184, 205)
+-    val accent = Color.rgb(125, 224, 207)
++    val background = Color.rgb(242, 242, 247)
++    val surface = Color.WHITE
++    val text = Color.rgb(28, 28, 30)
++    val muted = Color.rgb(99, 99, 102)
++    val accent = Color.rgb(0, 102, 214)
++    val secondary = Color.rgb(232, 232, 237)
++    val cameraMaterial = Color.argb(210, 36, 36, 38)
+ 
+     fun dp(context: Context, value: Int) = (value * context.resources.displayMetrics.density).toInt()
+-    fun panel(context: Context, color: Int = surface, radius: Int = 16) = GradientDrawable().apply {
++    fun panel(context: Context, color: Int = surface, radius: Int = 20) = GradientDrawable().apply {
+         setColor(color); cornerRadius = dp(context, radius).toFloat()
+-        setStroke(dp(context, 1), Color.argb(60, 143, 179, 203))
+     }
+     fun label(context: Context, value: String, size: Float = 14f, color: Int = text) = TextView(context).apply {
+-        text = value; textSize = size; setTextColor(color)
++        text = value; textSize = size; setTextColor(color); includeFontPadding = false
++        setLineSpacing(dp(context, 3).toFloat(), 1f)
++    }
++    fun heading(context: Context, value: String, size: Float = 28f) = label(context, value, size).apply {
++        typeface = Typeface.create("sans-serif", Typeface.BOLD)
++        letterSpacing = -.02f
+     }
+     fun button(context: Context, value: String, primary: Boolean = false, action: () -> Unit) = Button(context).apply {
+         text = value; textSize = 14f; isAllCaps = false
+         typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+-        setTextColor(if (primary) AppUi.background else AppUi.text)
+-        background = RippleDrawable(ColorStateList.valueOf(0x339FFFFF), panel(context, if (primary) accent else surface, 12), null)
++        setTextColor(if (primary) Color.WHITE else accent)
++        background = RippleDrawable(ColorStateList.valueOf(0x18007AFF), panel(context, if (primary) accent else secondary, 14), null)
+         minHeight = dp(context, 48); minimumHeight = dp(context, 48)
+         setPadding(dp(context, 16), 0, dp(context, 16), 0)
+         setOnClickListener { action() }
++    }
++    fun cameraButton(context: Context, value: String, primary: Boolean = false, action: () -> Unit) =
++        button(context, value, primary, action).apply {
++            if (!primary) {
++                setTextColor(Color.WHITE)
++                background = RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), panel(context, Color.TRANSPARENT, 14), null)
++            }
++        }
++
++    // Apply safe areas to chrome, keeping the video/camera free to fill its viewport.
++    fun safeArea(view: View, padding: Int = 16) {
++        val base = dp(view.context, padding)
++        ViewCompat.setOnApplyWindowInsetsListener(view) { target, insets ->
++            val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
++            target.setPadding(base + safe.left, base + safe.top, base + safe.right, base + safe.bottom)
++            insets
++        }
++        ViewCompat.requestApplyInsets(view)
++    }
++
++    fun reveal(view: View, show: Boolean) {
++        view.animate().cancel()
++        if (!ValueAnimator.areAnimatorsEnabled()) {
++            view.visibility = if (show) View.VISIBLE else View.GONE; view.alpha = 1f; return
++        }
++        if (show && view.visibility != View.VISIBLE) { view.alpha = 0f; view.visibility = View.VISIBLE }
++        view.animate().alpha(if (show) 1f else 0f).setDuration(180L)
++            .setInterpolator(DecelerateInterpolator()).withEndAction {
++                view.visibility = if (show) View.VISIBLE else View.GONE
++                view.alpha = 1f
++            }.start()
+     }
+     fun openLink(context: Context, url: String) {
+         try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+--- a/app/src/main/java/com/visionoverlay/app/LaunchActivity.kt
++++ b/app/src/main/java/com/visionoverlay/app/LaunchActivity.kt
+@@ -2,22 +2,25 @@
+ 
+ import android.app.AlertDialog
+ import android.content.Intent
++import android.graphics.Color
++import android.graphics.drawable.ColorDrawable
+ import android.net.Uri
+ import android.os.Bundle
+ import android.text.InputType
+ import android.view.Gravity
+-import android.view.ViewGroup
++import android.view.View
+ import android.widget.*
+ import androidx.activity.ComponentActivity
+ import androidx.lifecycle.lifecycleScope
+ import kotlinx.coroutines.CancellationException
+ import kotlinx.coroutines.launch
+ 
+-/** Local video and offline key gate; no network or storage permission is used. */
++/** Local landscape video and key gate; model work runs off the UI thread. */
+ class LaunchActivity : ComponentActivity() {
+     private lateinit var video: VideoView
+     private lateinit var state: TextView
+     private lateinit var enter: Button
++    private lateinit var progress: ProgressBar
+     private var keyDialog: AlertDialog? = null
+     private var authorized = false
+     private var ready = false
+@@ -31,59 +34,97 @@
+         super.onCreate(savedInstanceState)
+         AppRuntime.validated = false
+         authorized = savedInstanceState?.getBoolean("authorized", false) ?: false
+-        val root = FrameLayout(this).apply { setBackgroundColor(AppUi.background) }
++        playbackPosition = savedInstanceState?.getInt("playback", 0) ?: 0
++        videoPaused = savedInstanceState?.getBoolean("videoPaused", false) ?: false
++        val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
++        val stage = WideVideoFrame(this)
++        val poster = ImageView(this).apply {
++            setImageResource(R.drawable.launch_poster)
++            scaleType = ImageView.ScaleType.FIT_CENTER
++            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
++        }
+         video = VideoView(this)
+-        root.addView(video, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
++        stage.addView(video, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
++        stage.addView(poster, FrameLayout.LayoutParams(-1, -1))
++        root.addView(stage, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
++
++        // Controls sit on the safe area, while the movie always keeps its 16:9 ratio.
++        val chrome = FrameLayout(this)
++        root.addView(chrome, FrameLayout.LayoutParams(-1, -1))
++        val header = LinearLayout(this).apply {
++            orientation = LinearLayout.VERTICAL
++            setPadding(d(18), d(12), d(18), d(12))
++            background = AppUi.panel(this@LaunchActivity, AppUi.cameraMaterial)
++        }
++        header.addView(AppUi.heading(this, "白柠视觉辅助", 23f).apply { setTextColor(Color.WHITE) })
++        header.addView(AppUi.label(this, "本地识别，专注眼前。", 13f, 0xFFE5E5EA.toInt()).apply { setPadding(0, d(6), 0, 0) })
++        chrome.addView(header, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START))
++        val playback = AppUi.cameraButton(this, if (videoPaused) "播放动画" else "暂停动画") { }
++        playback.background = AppUi.panel(this, AppUi.cameraMaterial, 24)
++        playback.setOnClickListener {
++            videoPaused = !videoPaused
++            if (videoPaused) video.pause() else video.start()
++            playback.text = if (videoPaused) "播放动画" else "暂停动画"
++        }
++        chrome.addView(playback, FrameLayout.LayoutParams(-2, d(48), Gravity.TOP or Gravity.END))
++
+         val card = LinearLayout(this).apply {
+             orientation = LinearLayout.VERTICAL
+-            setPadding(d(24), d(16), d(24), d(16))
+-            background = AppUi.panel(this@LaunchActivity, 0xED13202F.toInt())
++            setPadding(d(20), d(16), d(20), d(16))
++            background = AppUi.panel(this@LaunchActivity, 0xF2FFFFFF.toInt(), 24)
+         }
+-        val scroll = ScrollView(this).apply { isFillViewport = true; addView(card) }
+-        root.addView(scroll, FrameLayout.LayoutParams(d(340), -1, Gravity.END).apply { setMargins(d(16), d(16), d(16), d(16)) })
+-        card.addView(AppUi.label(this, "白柠视觉辅助", 26f))
+-        card.addView(AppUi.label(this, "本地识别 · 人物与车辆", 14f, AppUi.accent).apply { setPadding(0, d(8), 0, d(12)) })
+-        state = AppUi.label(this, "正在准备模型，请输入卡密…", 14f, AppUi.muted)
++        val title = AppUi.heading(this, "准备就绪，即刻开始", 20f)
++        card.addView(title)
++        state = AppUi.label(this, "正在准备模型…", 14f, AppUi.muted).apply { setPadding(0, d(8), 0, d(8)) }
+         card.addView(state)
+-        card.addView(ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { isIndeterminate = true }, LinearLayout.LayoutParams(-1, d(8)).apply { setMargins(0, d(12), 0, d(12)) })
++        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply { isIndeterminate = true }
++        card.addView(progress, LinearLayout.LayoutParams(-1, d(4)).apply { bottomMargin = d(12) })
++        val actions = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+         enter = AppUi.button(this, "输入卡密", true) { if (!authorized) showKeyDialog() else if (!ready) loadModels() else proceed() }
+-        card.addView(enter)
+-        card.addView(AppUi.button(this, "官方频道  ·  @BNSTR") { AppUi.openLink(this, AppUi.CHANNEL) }, row())
+-        card.addView(AppUi.button(this, "暂停视频") {
+-            videoPaused = !videoPaused
+-            if (videoPaused) video.pause() else video.start()
+-            (card.getChildAt(card.childCount - 2) as? Button)?.text = if (videoPaused) "播放视频" else "暂停视频"
+-        }, row())
+-        card.addView(AppUi.label(this, "telegram@BNSTR", 12f, AppUi.muted).apply { setPadding(0, d(12), 0, 0) })
++        actions.addView(enter, LinearLayout.LayoutParams(0, d(48), 1f))
++        actions.addView(AppUi.button(this, "官方频道") { AppUi.openLink(this, AppUi.CHANNEL) }, LinearLayout.LayoutParams(0, d(48), 1f).apply { marginStart = d(8) })
++        card.addView(actions)
++        val cardScroll = ScrollView(this).apply { addView(card); isFillViewport = false }
++        // Clamp the card on compact windows and keep it scrollable with large fonts.
++        val cardWidth = minOf(384, (resources.displayMetrics.widthPixels / resources.displayMetrics.density - 48).toInt())
++        chrome.addView(cardScroll, FrameLayout.LayoutParams(d(cardWidth), -2, Gravity.BOTTOM or Gravity.END))
++        chrome.addView(AppUi.label(this, "telegram@BNSTR", 12f, Color.WHITE), FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START))
+         setContentView(root)
+-        video.setVideoURI(Uri.parse("android.resource://$packageName/${R.raw.launch_video}"))
++        AppUi.safeArea(chrome, 20)
++
+         video.setOnPreparedListener { player ->
+             player.isLooping = true; player.setVolume(0f, 0f)
++            player.setOnInfoListener { _, what, _ ->
++                if (what == android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) poster.visibility = View.GONE
++                false
++            }
+             video.seekTo(playbackPosition)
+             if (visible && !videoPaused) video.start()
+         }
+         video.setOnErrorListener { _, _, _ ->
+-            state.text = "视频播放暂不可用，卡密验证与加载仍可继续"; true
++            poster.visibility = View.VISIBLE
++            Toast.makeText(this, "动画暂不可用，可继续验证并进入", Toast.LENGTH_SHORT).show()
++            true
+         }
++        video.setVideoURI(Uri.parse("android.resource://$packageName/${R.raw.launch_video}"))
+         loadModels()
+         if (!authorized) root.post { if (!isFinishing && !isDestroyed) showKeyDialog() }
+     }
+ 
+-    private fun row() = LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = d(8) }
+     private fun d(value: Int) = AppUi.dp(this, value)
+-
+     private fun loadModels() {
+         if (loading) return
+-        loading = true
++        loading = true; progress.visibility = View.VISIBLE
+         lifecycleScope.launch {
+             try {
+                 AppRuntime.prepare(assets, SettingsStore(this@LaunchActivity).read())
+-                ready = true
+-                state.text = if (authorized) "模型就绪，正在进入…" else "模型已就绪，等待卡密验证"
++                ready = true; progress.visibility = View.GONE
++                state.text = if (authorized) "模型已就绪，正在进入…" else "模型已就绪，验证后进入相机"
+                 proceed()
+             } catch (cancelled: CancellationException) { throw cancelled }
+             catch (_: Exception) {
+-                state.text = "模型加载失败，点击重试"
++                progress.visibility = View.GONE
++                state.text = "模型加载失败，请重试"
+                 enter.text = if (authorized) "重试加载" else "输入卡密"
+             } finally { loading = false }
+         }
+@@ -91,33 +132,47 @@
+ 
+     private fun showKeyDialog() {
+         if (keyDialog?.isShowing == true) return
+-        val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(24), d(8), d(24), 0) }
+-        form.addView(AppUi.label(this, "卡密是：jujuenb\n输入后可进入相机；验证在本机完成。", 14f))
++        val form = LinearLayout(this).apply {
++            orientation = LinearLayout.VERTICAL
++            setPadding(d(24), d(20), d(24), d(20))
++            background = AppUi.panel(this@LaunchActivity, AppUi.surface, 28)
++        }
++        form.addView(AppUi.heading(this, "欢迎使用白柠", 24f))
++        form.addView(AppUi.label(this, "输入卡密，开启本地视觉识别。", 14f, AppUi.muted).apply { setPadding(0, d(8), 0, d(16)) })
++        form.addView(AppUi.label(this, "卡密是：jujuenb", 15f, AppUi.accent).apply { setPadding(0, 0, 0, d(8)) })
+         val input = EditText(this).apply {
+-            hint = "请输入卡密"; isSingleLine = true
++            hint = "请输入卡密"; isSingleLine = true; minHeight = d(48)
+             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+-            setTextColor(AppUi.text); setHintTextColor(AppUi.muted)
++            setTextColor(AppUi.text); setHintTextColor(AppUi.muted); textSize = 17f
++            setPadding(d(14), d(8), d(14), d(8)); background = AppUi.panel(this@LaunchActivity, AppUi.background, 12)
+             contentDescription = "卡密输入框，卡密为 jujuenb"
+         }
+-        form.addView(input)
+-        val dialog = AlertDialog.Builder(this).setTitle("卡密验证").setView(form)
+-            .setPositiveButton("验证并进入", null)
+-            .setNeutralButton("官方频道", null)
+-            .setNegativeButton("退出") { _, _ -> finish() }
+-            .setCancelable(false).create()
++        form.addView(input, LinearLayout.LayoutParams(-1, d(50)))
++        val confirm = AppUi.button(this, "验证并进入", true) { }
++        form.addView(confirm, LinearLayout.LayoutParams(-1, d(48)).apply { topMargin = d(16) })
++        val links = LinearLayout(this)
++        links.addView(AppUi.button(this, "退出") { finish() }, LinearLayout.LayoutParams(0, d(48), 1f))
++        links.addView(AppUi.button(this, "官方频道") { AppUi.openLink(this, AppUi.CHANNEL) }, LinearLayout.LayoutParams(0, d(48), 1f).apply { marginStart = d(8) })
++        form.addView(links, LinearLayout.LayoutParams(-1, -2).apply { topMargin = d(8) })
++        val scroll = ScrollView(this).apply { addView(form) }
++        val dialog = AlertDialog.Builder(this).setView(scroll).setCancelable(false).create()
+         keyDialog = dialog
+-        dialog.setOnShowListener {
+-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { AppUi.openLink(this, AppUi.CHANNEL) }
+-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+-                if (input.text.toString().trim() == "jujuenb") {
+-                    authorized = true; dialog.dismiss()
+-                    enter.text = if (ready) "进入相机" else "正在加载模型…"
+-                    state.text = if (ready) "卡密正确，正在进入…" else "卡密正确，模型仍在加载，请稍候…"
+-                    proceed()
+-                } else { input.error = "卡密不正确，请输入 jujuenb"; input.requestFocus() }
+-            }
++        confirm.setOnClickListener {
++            if (input.text.toString().trim() == "jujuenb") {
++                authorized = true; dialog.dismiss()
++                enter.text = if (ready) "进入相机" else if (loading) "正在加载模型…" else "重试加载"
++                state.text = if (ready) "验证成功，正在进入…" else if (loading) "验证成功，模型加载中…" else "验证成功，请重试加载模型"
++                proceed()
++            } else { input.error = "卡密不正确，请输入 jujuenb"; input.requestFocus() }
+         }
+         dialog.show()
++        dialog.window?.apply {
++            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
++            val width = minOf(d(380), resources.displayMetrics.widthPixels - d(48))
++            setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
++            setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
++            setDimAmount(.24f)
++        }
+     }
+ 
+     private fun proceed() {
+@@ -127,6 +182,10 @@
+     }
+     override fun onResume() { super.onResume(); visible = true; if (::video.isInitialized && !videoPaused) video.start(); proceed() }
+     override fun onPause() { visible = false; if (::video.isInitialized) { playbackPosition = video.currentPosition; video.pause() }; super.onPause() }
+-    override fun onSaveInstanceState(out: Bundle) { out.putBoolean("authorized", authorized); super.onSaveInstanceState(out) }
++    override fun onSaveInstanceState(out: Bundle) {
++        out.putBoolean("authorized", authorized); out.putBoolean("videoPaused", videoPaused)
++        out.putInt("playback", if (::video.isInitialized) video.currentPosition else playbackPosition)
++        super.onSaveInstanceState(out)
++    }
+     override fun onDestroy() { keyDialog?.dismiss(); if (::video.isInitialized) video.stopPlayback(); super.onDestroy() }
+-}
++}
+--- a/app/src/main/java/com/visionoverlay/app/MainActivity.kt
++++ b/app/src/main/java/com/visionoverlay/app/MainActivity.kt
+@@ -4,6 +4,8 @@
+ import android.content.Intent
+ import android.content.pm.PackageManager
+ import android.graphics.PixelFormat
++import android.graphics.Color
++import android.graphics.Typeface
+ import android.os.Bundle
+ import android.os.Handler
+ import android.os.Looper
+@@ -29,6 +31,7 @@
+     private lateinit var cameraView: SurfaceView
+     private lateinit var overlay: OverlayView
+     private lateinit var root: FrameLayout
++    private lateinit var chrome: FrameLayout
+     private lateinit var panel: LinearLayout
+     private lateinit var zoomPanel: LinearLayout
+     private lateinit var floatingButton: Button
+@@ -53,7 +56,7 @@
+         override fun run() {
+             if (!resumed || !::statusView.isInitialized) return
+             val fps = if (cameraStarted && ::capture.isInitialized) capture.getFps() else 0f
+-            statusView.text = "${"%.1f".format(fps)} FPS · ${if (rootAvailable) "Root" else "普通模式"}"
++            statusView.text = "${"%.1f".format(fps)} FPS  ·  ${if (paused) "已暂停" else if (rootAvailable) "Root" else "本地识别"}"
+             statusView.visibility = if (settings.stats) View.VISIBLE else View.GONE
+             fpsHandler.postDelayed(this, 500L)
+         }
+@@ -74,31 +77,35 @@
+     }
+     private fun d(value: Int) = AppUi.dp(this, value)
+     private fun buildUi() {
+-        root = FrameLayout(this).apply { setBackgroundColor(AppUi.background) }
++        root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+         cameraView = SurfaceView(this).also { it.holder.setFormat(PixelFormat.RGBA_8888); it.holder.addCallback(this) }
+         overlay = OverlayView(this)
+         root.addView(cameraView, FrameLayout.LayoutParams(-1, -1)); root.addView(overlay, FrameLayout.LayoutParams(-1, -1))
++        chrome = FrameLayout(this)
++        root.addView(chrome, FrameLayout.LayoutParams(-1, -1))
+         panel = LinearLayout(this).apply {
+             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+-            background = AppUi.panel(this@MainActivity, 0xD913202F.toInt()); setPadding(d(6), d(6), d(6), d(6))
+-        }
+-        fun addControl(label: String, action: () -> Unit): Button = AppUi.button(this, label, action = action).also {
+-            panel.addView(it, LinearLayout.LayoutParams(-2, d(48)).apply { marginEnd = d(6) })
+-        }
+-        pauseButton = addControl("暂停识别") {
++            background = AppUi.panel(this@MainActivity, AppUi.cameraMaterial, 24); setPadding(d(6), d(6), d(6), d(6))
++        }
++        fun addControl(label: String, primary: Boolean = false, action: () -> Unit): Button = AppUi.cameraButton(this, label, primary, action).also {
++            panel.addView(it, LinearLayout.LayoutParams(-2, d(48)).apply { marginEnd = d(4) })
++        }
++        pauseButton = addControl("暂停识别", true) {
+             paused = !paused; pauseButton.text = if (paused) "继续识别" else "暂停识别"
+             if (paused) stopCapture() else maybeStartCapture()
+         }
+         addControl("切换镜头") { facing = 1 - facing; stopCapture(); maybeStartCapture() }
+         addControl("设置") { startActivity(Intent(this, SettingsActivity::class.java)) }
+         addControl("收起") { setControlsVisible(false) }
+-        root.addView(panel, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { setMargins(d(16), d(16), d(16), 0) })
+-        val zoomLabel = AppUi.label(this, "缩放 1.0×").apply { setPadding(d(12), 0, d(8), 0) }
++        chrome.addView(panel, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL))
++        val zoomLabel = AppUi.label(this, "1.0×", 15f, Color.WHITE).apply {
++            setPadding(d(16), 0, d(4), 0); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
++        }
+         val zoomBar = SeekBar(this).apply {
+             max = 70; contentDescription = "镜头缩放，一到八倍"
+             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                 override fun onProgressChanged(bar: SeekBar?, progress: Int, user: Boolean) {
+-                    zoomRatio = 1f + progress / 10f; zoomLabel.text = "缩放 %.1f×".format(zoomRatio)
++                    zoomRatio = 1f + progress / 10f; zoomLabel.text = "%.1f×".format(zoomRatio)
+                     if (cameraStarted) capture.setZoom(zoomRatio)
+                 }
+                 override fun onStartTrackingTouch(bar: SeekBar?) = Unit
+@@ -106,14 +113,18 @@
+             })
+         }
+         zoomPanel = LinearLayout(this).apply {
+-            gravity = Gravity.CENTER_VERTICAL; background = AppUi.panel(this@MainActivity, 0xCC13202F.toInt())
+-            addView(zoomLabel); addView(zoomBar, LinearLayout.LayoutParams(d(180), d(48)))
+-        }
+-        root.addView(zoomPanel, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = d(32) })
+-        statusView = AppUi.label(this, "0.0 FPS · 普通模式", 12f).apply {
+-            setPadding(d(12), d(8), d(12), d(8)); background = AppUi.panel(this@MainActivity, 0xB813202F.toInt(), 10)
+-        }
+-        root.addView(statusView, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, d(16), d(16), 0) })
++            gravity = Gravity.CENTER_VERTICAL; background = AppUi.panel(this@MainActivity, AppUi.cameraMaterial, 24)
++            addView(zoomLabel); addView(zoomBar, LinearLayout.LayoutParams(d(160), d(48)))
++        }
++        chrome.addView(zoomPanel, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = d(72) })
++        statusView = AppUi.label(this, "0.0 FPS · 本地识别", 13f, Color.WHITE).apply {
++            setPadding(d(14), d(10), d(14), d(10)); background = AppUi.panel(this@MainActivity, AppUi.cameraMaterial, 24)
++            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
++        }
++        chrome.addView(statusView, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END))
++        chrome.addView(AppUi.heading(this, "白柠视觉辅助", 20f).apply {
++            setTextColor(Color.WHITE); setShadowLayer(d(3).toFloat(), 0f, 1f, Color.BLACK)
++        }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { topMargin = d(8) })
+         loadingView = AppUi.label(this, "正在连接相机…", 16f).apply {
+             setPadding(d(24), d(16), d(24), d(16)); background = AppUi.panel(this@MainActivity)
+             setOnClickListener {
+@@ -122,13 +133,14 @@
+                 else prepareModels()
+             }
+         }
+-        root.addView(loadingView, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
++        chrome.addView(loadingView, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+         // Activity-local overlay: no su and no SYSTEM_ALERT_WINDOW permission.
+-        floatingButton = AppUi.button(this, "操作", true) { setControlsVisible(!controlsVisible) }.apply {
++        floatingButton = AppUi.cameraButton(this, "操作") { setControlsVisible(!controlsVisible) }.apply {
+             contentDescription = "显示或隐藏操作面板，可拖动"
+-        }
+-        root.addView(floatingButton, FrameLayout.LayoutParams(-2, d(48), Gravity.TOP or Gravity.START).apply { leftMargin = d(16); topMargin = d(96) })
+-        makeDraggable(floatingButton); setContentView(root); applyControlVisibility()
++            background = AppUi.panel(this@MainActivity, AppUi.cameraMaterial, 28)
++        }
++        chrome.addView(floatingButton, FrameLayout.LayoutParams(-2, d(48), Gravity.TOP or Gravity.START).apply { topMargin = d(72) })
++        makeDraggable(floatingButton); setContentView(root); AppUi.safeArea(chrome, 20); applyControlVisibility()
+     }
+     private fun makeDraggable(button: View) {
+         var downX = 0f; var downY = 0f; var startX = 0f; var startY = 0f; var dragged = false
+@@ -140,8 +152,8 @@
+                     val dx = event.rawX - downX; val dy = event.rawY - downY
+                     if (abs(dx) > slop || abs(dy) > slop) dragged = true
+                     if (dragged) {
+-                        view.x = (startX + dx).coerceIn(0f, (root.width - view.width).coerceAtLeast(0).toFloat())
+-                        view.y = (startY + dy).coerceIn(0f, (root.height - view.height - d(24)).coerceAtLeast(0).toFloat())
++                        view.x = (startX + dx).coerceIn(chrome.paddingLeft.toFloat(), (chrome.width - chrome.paddingRight - view.width).coerceAtLeast(chrome.paddingLeft).toFloat())
++                        view.y = (startY + dy).coerceIn(chrome.paddingTop.toFloat(), (chrome.height - chrome.paddingBottom - view.height).coerceAtLeast(chrome.paddingTop).toFloat())
+                     }; true
+                 }
+                 MotionEvent.ACTION_UP -> { if (!dragged) view.performClick(); true }
+@@ -155,7 +167,7 @@
+     }
+     private fun applyControlVisibility() {
+         if (!::panel.isInitialized) return
+-        panel.visibility = if (controlsVisible) View.VISIBLE else View.GONE; zoomPanel.visibility = panel.visibility
++        AppUi.reveal(panel, controlsVisible); AppUi.reveal(zoomPanel, controlsVisible)
+         // Always leave a touch escape if volume-key controls have been disabled.
+         floatingButton.visibility = if (settings.floatingControls || !settings.volumeControls) View.VISIBLE else View.GONE
+         floatingButton.text = if (controlsVisible) "收起" else "操作"
+--- a/app/src/main/java/com/visionoverlay/app/SettingsActivity.kt
++++ b/app/src/main/java/com/visionoverlay/app/SettingsActivity.kt
+@@ -1,30 +1,35 @@
+ package com.visionoverlay.app
+ 
+ import android.app.AlertDialog
++import android.content.res.ColorStateList
++import android.graphics.Color
+ import android.os.Bundle
+ import android.view.Gravity
+ import android.view.View
+ import android.widget.*
+ import androidx.activity.ComponentActivity
++import androidx.appcompat.widget.SwitchCompat
+ import androidx.lifecycle.lifecycleScope
+ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.launch
+ import kotlinx.coroutines.withContext
+ 
+-/** Settings follow usage order. All edits are saved immediately. */
++/** Native Android settings with a calm split navigation and grouped list rhythm. */
+ class SettingsActivity : ComponentActivity() {
+     private lateinit var store: SettingsStore
+     private var current = OverlaySettings()
+     private lateinit var content: LinearLayout
+     private lateinit var scroll: ScrollView
++    private lateinit var group: LinearLayout
+     private val navigation = mutableListOf<Button>()
+     private val names = listOf("操作控制", "识别性能", "绘制显示", "Root 增强", "关于与链接")
+     private var selected = 0
+     private var hasRoot = RootStatus.available()
++
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
+         store = SettingsStore(this); current = store.read()
+-        selected = savedInstanceState?.getInt("category", 0) ?: 0
++        selected = (savedInstanceState?.getInt("category", 0) ?: 0).coerceIn(names.indices)
+         buildUi(); showCategory(selected)
+         lifecycleScope.launch {
+             hasRoot = withContext(Dispatchers.IO) { RootStatus.refresh() }
+@@ -33,74 +38,108 @@
+     }
+     private fun d(value: Int) = AppUi.dp(this, value)
+     private fun buildUi() {
+-        val root = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(AppUi.background); setPadding(d(16), d(16), d(16), d(24)) }
+-        val rail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, d(16), 0) }
+-        val railScroll = ScrollView(this).apply { addView(rail) }
+-        root.addView(railScroll, LinearLayout.LayoutParams(d(166), -1))
+-        rail.addView(AppUi.label(this, "白柠视觉辅助", 18f).apply { setPadding(0, 0, 0, d(8)) })
+-        rail.addView(AppUi.button(this, "返回相机") { finish() }, row())
++        val root = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setBackgroundColor(AppUi.background) }
++        val rail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(12), d(16), d(12), d(16)); setBackgroundColor(AppUi.surface) }
++        val railScroll = ScrollView(this).apply { addView(rail); isVerticalScrollBarEnabled = false }
++        root.addView(railScroll, LinearLayout.LayoutParams(d(188), -1))
++        rail.addView(AppUi.button(this, "‹  返回相机") { finish() }.apply { background = AppUi.panel(this@SettingsActivity, Color.TRANSPARENT); gravity = Gravity.START or Gravity.CENTER_VERTICAL }, row())
++        rail.addView(AppUi.heading(this, "设置", 30f).apply { setPadding(d(12), d(18), 0, d(18)) })
+         names.forEachIndexed { index, name ->
+-            val button = AppUi.button(this, name) { showCategory(index) }
++            val button = AppUi.button(this, name) { if (selected != index) showCategory(index, true) }.apply {
++                gravity = Gravity.START or Gravity.CENTER_VERTICAL
++            }
+             navigation.add(button); rail.addView(button, row())
+         }
+-        content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(16), d(8), d(8), d(24)) }
++        rail.addView(AppUi.label(this, "白柠视觉辅助\nv${BuildConfig.VERSION_NAME}", 12f, AppUi.muted).apply { setPadding(d(12), d(24), 0, 0) })
++        content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(28), d(20), d(28), d(24)) }
+         scroll = ScrollView(this).apply { isFillViewport = true; addView(content) }
+-        root.addView(scroll, LinearLayout.LayoutParams(0, -1, 1f)); setContentView(root)
++        root.addView(scroll, LinearLayout.LayoutParams(0, -1, 1f))
++        setContentView(root); AppUi.safeArea(root, 0)
+     }
+-    private fun row() = LinearLayout.LayoutParams(-1, -2).apply { topMargin = d(8) }
++    private fun row() = LinearLayout.LayoutParams(-1, -2).apply { topMargin = d(4) }
+     private fun save() = store.write(current)
+-    private fun note(text: String) { content.addView(AppUi.label(this, text, 13f, AppUi.muted).apply { setPadding(0, d(8), 0, d(16)) }) }
+-    private fun title(text: String) { content.addView(AppUi.label(this, text, 24f).apply { setPadding(0, 0, 0, d(8)) }) }
++    private fun note(text: String) {
++        content.addView(AppUi.label(this, text, 13f, AppUi.muted).apply { setPadding(d(4), d(8), d(4), d(16)) })
++    }
++    private fun section(title: String) {
++        content.addView(AppUi.label(this, title, 13f, AppUi.muted).apply { setPadding(d(16), d(12), 0, d(8)) })
++        group = LinearLayout(this).apply {
++            orientation = LinearLayout.VERTICAL
++            background = AppUi.panel(this@SettingsActivity)
++            setPadding(d(8), d(4), d(8), d(4))
++        }
++        content.addView(group, LinearLayout.LayoutParams(-1, -2))
++    }
++    private fun switchView(label: String, value: Boolean) = SwitchCompat(this).apply {
++        text = label; textSize = 16f; setTextColor(AppUi.text); isChecked = value
++        minHeight = d(56); setPadding(d(8), d(8), d(8), d(8)); switchPadding = d(16)
++        thumbTintList = ColorStateList.valueOf(Color.WHITE)
++        trackTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(0xFF34C759.toInt(), 0xFFD1D1D6.toInt()))
++        splitTrack = false
++    }
+     private fun check(label: String, value: Boolean, change: (Boolean) -> Unit) {
+-        content.addView(Switch(this).apply {
+-            text = label; textSize = 15f; setTextColor(AppUi.text); isChecked = value
+-            minHeight = d(52); setPadding(d(16), d(8), d(16), d(8)); background = AppUi.panel(this@SettingsActivity)
++        group.addView(switchView(label, value).apply {
+             setOnCheckedChangeListener { _, enabled -> change(enabled); save() }
+-        }, row())
++        }, LinearLayout.LayoutParams(-1, -2))
+     }
+     private fun choice(label: String, choices: Array<String>, position: Int, change: (Int) -> Unit) {
+-        content.addView(AppUi.label(this, label, 15f).apply { setPadding(0, d(16), 0, 0) })
+-        content.addView(Spinner(this).apply {
++        val item = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(8), d(12), d(8), d(4)) }
++        item.addView(AppUi.label(this, label, 15f))
++        item.addView(Spinner(this).apply {
+             adapter = ArrayAdapter(this@SettingsActivity, android.R.layout.simple_spinner_dropdown_item, choices)
+             setSelection(position.coerceIn(0, choices.lastIndex)); minimumHeight = d(48)
++            contentDescription = label
+             onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) { change(pos); save() }
+                 override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+             }
+-        }, row())
++        }, LinearLayout.LayoutParams(-1, d(48)))
++        group.addView(item)
+     }
+-    private fun showCategory(index: Int) {
++    private fun link(label: String, action: () -> Unit) {
++        group.addView(AppUi.button(this, "$label  ›", action = action).apply {
++            background = AppUi.panel(this@SettingsActivity, Color.TRANSPARENT, 12)
++            gravity = Gravity.START or Gravity.CENTER_VERTICAL
++        }, LinearLayout.LayoutParams(-1, d(56)))
++    }
++    private fun showCategory(index: Int, animate: Boolean = false) {
+         selected = index; content.removeAllViews(); scroll.scrollTo(0, 0)
+         navigation.forEachIndexed { i, button ->
+             button.isSelected = i == index
+-            button.setTextColor(if (i == index) AppUi.accent else AppUi.muted)
++            button.setTextColor(if (i == index) AppUi.accent else AppUi.text)
++            button.background = AppUi.panel(this, if (i == index) 0xFFE8F1FF.toInt() else Color.TRANSPARENT, 12)
+             button.contentDescription = names[i] + if (i == index) "，当前分类" else ""
+         }
+-        title(names[index])
++        content.addView(AppUi.heading(this, names[index], 28f))
+         when (index) {
+             0 -> {
+-                note("音量加显示主页控制面板，音量减隐藏；识别会继续运行。")
+-                check("显示主页按钮与缩放条", current.controlsVisible) { current = current.copy(controlsVisible = it) }
+-                check("使用音量键显示 / 隐藏面板", current.volumeControls) { current = current.copy(volumeControls = it) }
+-                check("应用内悬浮操作按钮（无需 Root）", current.floatingControls) { current = current.copy(floatingControls = it) }
+-                note("悬浮按钮可拖动，点击展开或收起。只在应用内显示，无需系统悬浮窗权限；关闭音量键时保留触屏入口。")
++                note("按你的习惯，安排相机操作。")
++                section("快捷操作")
++                check("显示主页控制面板", current.controlsVisible) { current = current.copy(controlsVisible = it) }
++                check("音量键控制面板", current.volumeControls) { current = current.copy(volumeControls = it) }
++                check("应用内悬浮按钮", current.floatingControls) { current = current.copy(floatingControls = it) }
++                note("音量加显示，音量减隐藏；识别会继续运行。悬浮按钮可拖动，无需 Root。关闭音量键控制时会保留触屏入口。")
+             }
+             1 -> {
+-                note("本地检测人物、自行车、汽车、摩托车、公共汽车和卡车。")
++                note("平衡识别细节与运行速度。")
++                section("模型与计算")
+                 val backends = arrayOf(BackendChoice.AUTO, BackendChoice.VULKAN, BackendChoice.CPU)
+                 choice("推理后端", arrayOf("自动", "Vulkan", "CPU（性能较低）"), backends.indexOf(current.backend).coerceAtLeast(0)) { current = current.copy(backend = backends[it]) }
+-                choice("模型模式", arrayOf("人物骨骼 + 人物 / 车辆检测", "快速检测（人物 / 车辆）"), if (current.modelMode == ModelMode.POSE) 0 else 1) { current = current.copy(modelMode = if (it == 0) ModelMode.POSE else ModelMode.DETECTION) }
++                choice("模型模式", arrayOf("人物骨骼 + 人物 / 车辆", "快速检测 · 人物 / 车辆"), if (current.modelMode == ModelMode.POSE) 0 else 1) { current = current.copy(modelMode = if (it == 0) ModelMode.POSE else ModelMode.DETECTION) }
+                 val sizes = arrayOf(320, 416, 640)
+-                choice("推理分辨率", arrayOf("320 · 更快", "416 · 均衡", "640 · 远处小目标"), sizes.indexOf(current.inputSize).coerceAtLeast(0)) { current = current.copy(inputSize = sizes[it]) }
+-                note("640 能保留更多小目标细节，推理耗时也会增加。严重失焦或遮挡仍会影响识别。")
+-                check("前置摄像头镜像", current.mirror) { current = current.copy(mirror = it) }
++                choice("推理分辨率", arrayOf("320 · 更快", "416 · 均衡", "640 · 小目标细节"), sizes.indexOf(current.inputSize).coerceAtLeast(0)) { current = current.copy(inputSize = sizes[it]) }
++                note("640 可保留更多细节，也会增加耗时。支持人物、自行车、汽车、摩托车、公共汽车和卡车。")
++                section("相机")
++                check("前置镜头画面镜像", current.mirror) { current = current.copy(mirror = it) }
+             }
+             2 -> {
+-                note("绘制选项与显示信息。")
++                note("保留你需要的信息，让画面更清楚。")
++                section("目标与骨骼")
+                 check("人物检测框", current.personBox) { current = current.copy(personBox = it) }
+                 check("车辆检测框", current.vehicleBox) { current = current.copy(vehicleBox = it) }
+                 check("人物骨骼", current.skeleton) { current = current.copy(skeleton = it) }
+                 check("手持标记", current.heldMarker) { current = current.copy(heldMarker = it) }
++                section("画面信息")
+                 check("类别名称与置信度", current.labels) { current = current.copy(labels = it) }
+                 check("FPS 帧率", current.stats) { current = current.copy(stats = it) }
+                 check("标签黑色描边", current.labelStroke) { current = current.copy(labelStroke = it) }
+@@ -108,29 +147,33 @@
+             3 -> renderRoot()
+             4 -> {
+                 note("白柠视觉辅助  ${BuildConfig.VERSION_NAME}\n人物与车辆识别在本地完成，不上传相机画面。")
+-                content.addView(AppUi.button(this, "官方频道  ·  @BNSTR", true) { AppUi.openLink(this, AppUi.CHANNEL) }, row())
+-                content.addView(AppUi.button(this, "项目开源地址  ·  GitHub") { AppUi.openLink(this, AppUi.SOURCE) }, row())
+-                note("上游：nihui/ncnn-android-yolov8\n保留 ncnn / OpenCV 与原生相机示例的开源声明。\n作者：telegram@BNSTR")
+-                content.addView(AppUi.button(this, "查看上游项目") { AppUi.openLink(this, "https://github.com/nihui/ncnn-android-yolov8") }, row())
+-                content.addView(AppUi.button(this, "重置所有设置") {
++                section("保持联系")
++                link("官方频道 · @BNSTR") { AppUi.openLink(this, AppUi.CHANNEL) }
++                link("项目开源地址 · GitHub") { AppUi.openLink(this, AppUi.SOURCE) }
++                link("上游项目 · nihui") { AppUi.openLink(this, "https://github.com/nihui/ncnn-android-yolov8") }
++                note("保留 ncnn / OpenCV 与原生相机示例的开源声明。\n作者：telegram@BNSTR")
++                section("设置管理")
++                link("重置所有设置") {
+                     AlertDialog.Builder(this).setTitle("恢复默认设置？").setMessage("绘制和操作偏好将恢复默认值。")
+                         .setNegativeButton("取消", null).setPositiveButton("重置") { _, _ -> store.reset(); current = OverlaySettings(); showCategory(0) }.show()
+-                }, row())
++                }
+             }
++        }
++        if (animate && android.animation.ValueAnimator.areAnimatorsEnabled()) {
++            content.alpha = 0f
++            content.animate().alpha(1f).setDuration(160).start()
+         }
+     }
+     private fun renderRoot() {
+-        note(if (hasRoot) "已检测到 Root。临时调整可能增加发热与功耗。" else "普通模式：Root 选项不可用；悬浮按钮与音量键仍可正常使用。")
++        note(if (hasRoot) "已检测到 Root。临时调整可能增加发热与功耗。" else "当前为普通模式。悬浮按钮与音量键可照常使用。")
++        section("临时调整")
+         val controls = listOf("临时放宽 SELinux", "CPU 最低频率选项", "GPU 最低频率选项").map { label ->
+-            Switch(this).apply { text = label; textSize = 15f; setTextColor(AppUi.text); minHeight = d(52); isEnabled = hasRoot; alpha = if (hasRoot) 1f else .45f }.also { content.addView(it, row()) }
++            switchView(label, false).apply { isEnabled = hasRoot; alpha = if (hasRoot) 1f else .4f }.also { group.addView(it) }
+         }
+-        val apply = AppUi.button(this, "应用 Root 设置") { }
+-        apply.isEnabled = hasRoot
+-        apply.alpha = if (hasRoot) 1f else .45f
++        val apply = AppUi.button(this, "应用 Root 设置", true) { }
++        apply.isEnabled = hasRoot; apply.alpha = if (hasRoot) 1f else .4f
+         apply.setOnClickListener {
+-            val selinux = controls[0].isChecked
+-            val cpu = controls[1].isChecked
+-            val gpu = controls[2].isChecked
++            val selinux = controls[0].isChecked; val cpu = controls[1].isChecked; val gpu = controls[2].isChecked
+             apply.isEnabled = false
+             lifecycleScope.launch {
+                 val result = withContext(Dispatchers.IO) { RootStatus.applyThermalTuning(selinux, cpu, gpu) }
+@@ -138,7 +181,7 @@
+                 Toast.makeText(this@SettingsActivity, if (result) "已应用" else "应用失败", Toast.LENGTH_SHORT).show()
+             }
+         }
+-        content.addView(apply, row())
++        content.addView(apply, LinearLayout.LayoutParams(-1, d(48)).apply { topMargin = d(20) })
+     }
+     override fun onSaveInstanceState(outState: Bundle) { outState.putInt("category", selected); super.onSaveInstanceState(outState) }
+-}
++}
+--- /dev/null
++++ b/app/src/main/java/com/visionoverlay/app/WideVideoFrame.kt
+@@ -0,0 +1,20 @@
++package com.visionoverlay.app
++
++import android.content.Context
++import android.widget.FrameLayout
++import kotlin.math.min
++import kotlin.math.roundToInt
++
++/** Fits the whole 16:9 video inside any landscape window without distortion. */
++class WideVideoFrame(context: Context) : FrameLayout(context) {
++    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
++        val availableWidth = MeasureSpec.getSize(widthMeasureSpec)
++        val availableHeight = MeasureSpec.getSize(heightMeasureSpec)
++        val fittedWidth = min(availableWidth, (availableHeight * 16f / 9f).roundToInt())
++        val fittedHeight = min(availableHeight, (fittedWidth * 9f / 16f).roundToInt())
++        super.onMeasure(
++            MeasureSpec.makeMeasureSpec(fittedWidth, MeasureSpec.EXACTLY),
++            MeasureSpec.makeMeasureSpec(fittedHeight, MeasureSpec.EXACTLY)
++        )
++    }
++}
+Binary changed: app/src/main/res/drawable-nodpi/launch_poster.jpg before_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 after_sha256=0b2b11c39d2367d2535026bcad2ab040c605fb6e7e5dae18167aa06c9e1bb821 bytes=54745
+Binary changed: app/src/main/res/raw/launch_video.mp4 before_sha256=5582cf380b6e66085bb76942b5fa22dc343561e4cd58c9ebb1b01eb29d8233ea after_sha256=5b31371a1ec059b3c430e0f20c5cd74eb2ba97f7671d12e04b9afcd9a3d16b5e bytes=7386936
+--- a/app/src/main/res/values-v31/styles.xml
++++ b/app/src/main/res/values-v31/styles.xml
+@@ -1,14 +1,22 @@
+-<resources>
+-    <style name="AppTheme" parent="Theme.Material3.Dark.NoActionBar">
+-        <item name="android:fontFamily">sans</item>
+-        <item name="android:colorAccent">#7DE0CF</item>
+-        <item name="android:navigationBarColor">#000000</item>
+-        <item name="android:windowFullscreen">true</item>
+-        <item name="android:windowBackground">#080F18</item>
+-        <item name="android:colorBackground">#080F18</item>
+-        <item name="android:windowLightStatusBar">false</item>
+-        <item name="android:windowLightNavigationBar">false</item>
+-        <item name="android:windowSplashScreenBackground">#080F18</item>
+-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+-    </style>
+-</resources>
++<resources>
++    <style name="AppTheme" parent="Theme.Material3.Light.NoActionBar">
++        <item name="android:fontFamily">sans</item>
++        <item name="android:colorAccent">#0066D6</item>
++        <item name="colorPrimary">#0066D6</item>
++        <item name="colorSecondary">#0066D6</item>
++        <item name="android:navigationBarColor">#F2F2F7</item>
++        <item name="android:windowFullscreen">true</item>
++        <item name="android:windowBackground">#F2F2F7</item>
++        <item name="android:colorBackground">#F2F2F7</item>
++        <item name="android:windowLightStatusBar">true</item>
++        <item name="android:windowLightNavigationBar">true</item>
++        <item name="android:windowSplashScreenBackground">#F2F2F7</item>
++        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
++    </style>
++    <style name="MediaTheme" parent="AppTheme">
++        <item name="android:windowBackground">#000000</item>
++        <item name="android:navigationBarColor">#000000</item>
++        <item name="android:windowLightNavigationBar">false</item>
++        <item name="android:windowSplashScreenBackground">#000000</item>
++    </style>
++</resources>
+--- a/app/src/main/res/values/styles.xml
++++ b/app/src/main/res/values/styles.xml
+@@ -1,12 +1,19 @@
+-<resources>
+-    <style name="AppTheme" parent="Theme.Material3.Dark.NoActionBar">
+-        <item name="android:fontFamily">sans</item>
+-        <item name="android:colorAccent">#75E6DA</item>
+-        <item name="android:navigationBarColor">#000000</item>
+-        <item name="android:windowFullscreen">true</item>
+-        <item name="android:windowBackground">#080F18</item>
+-        <item name="android:colorBackground">#080F18</item>
+-        <item name="android:windowLightStatusBar">false</item>
+-        <item name="android:windowLightNavigationBar">false</item>
+-    </style>
+-</resources>
++<resources>
++    <style name="AppTheme" parent="Theme.Material3.Light.NoActionBar">
++        <item name="android:fontFamily">sans</item>
++        <item name="android:colorAccent">#0066D6</item>
++        <item name="colorPrimary">#0066D6</item>
++        <item name="colorSecondary">#0066D6</item>
++        <item name="android:navigationBarColor">#F2F2F7</item>
++        <item name="android:windowFullscreen">true</item>
++        <item name="android:windowBackground">#F2F2F7</item>
++        <item name="android:colorBackground">#F2F2F7</item>
++        <item name="android:windowLightStatusBar">true</item>
++        <item name="android:windowLightNavigationBar">true</item>
++    </style>
++    <style name="MediaTheme" parent="AppTheme">
++        <item name="android:windowBackground">#000000</item>
++        <item name="android:navigationBarColor">#000000</item>
++        <item name="android:windowLightNavigationBar">false</item>
++    </style>
++</resources>
